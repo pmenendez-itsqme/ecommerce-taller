@@ -1,42 +1,79 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { AppButton } from './src/components';
+import { SafeAreaView, StyleSheet } from 'react-native';
+import { TopBar } from './src/components/TopBar';
+import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
-import { colors, spacing, typography } from './src/theme';
-import type { User } from './src/types';
+import ProductDetailScreen from './src/screens/ProductDetailScreen';
+import ProductListScreen from './src/screens/ProductListScreen';
+import { colors } from './src/theme';
+import type { Product, User } from './src/types';
+
+/** Pantallas disponibles tras iniciar sesión */
+type Pantalla = 'home' | 'listado' | 'detalle';
 
 /**
- * ETAPA 1 — Raíz de la aplicación.
+ * ETAPAS 1 a 3 — Raíz de la aplicación.
  *
- * Por ahora manejamos el "usuario logueado" con un simple useState.
- * En la Etapa 5 esto se reemplazará por React Navigation
- * (Login -> Home -> Listado -> Detalle -> Carrito).
+ * La navegación sigue siendo "casera" (useState). En la Etapa 5 la
+ * sustituiremos por React Navigation, que además dará el gesto de
+ * deslizar para volver y el historial del botón físico de Android.
  */
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
+  const [pantalla, setPantalla] = useState<Pantalla>('home');
+
+  /** Producto que el usuario abrió desde el listado */
+  const [productoActivo, setProductoActivo] = useState<Product | null>(null);
+
+  // Sin sesión no hay nada más que mostrar
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
+        <LoginScreen onLoginSuccess={setUser} />
+      </SafeAreaView>
+    );
+  }
+
+  const cerrarSesion = () => {
+    setUser(null);
+    // Importante: volvemos al estado inicial. Si no, al entrar el
+    // siguiente usuario aparecería la pantalla donde lo dejó el anterior.
+    setPantalla('home');
+    setProductoActivo(null);
+  };
+
+  const abrirDetalle = (producto: Product) => {
+    setProductoActivo(producto);
+    setPantalla('detalle');
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
 
-      {user ? (
-        // Pantalla temporal: se sustituye por HomeScreen en la Etapa 2
-        <View style={styles.placeholder}>
-          <Text style={styles.emoji}>✅</Text>
-          <Text style={styles.title}>¡Hola, {user.name}!</Text>
-          <Text style={styles.text}>
-            Autenticación correcta.{'\n'}La pantalla de Inicio llega en la Etapa 2.
-          </Text>
-          <AppButton
-            title="Cerrar sesión"
-            variant="secondary"
-            onPress={() => setUser(null)}
-            style={styles.button}
-          />
-        </View>
-      ) : (
-        <LoginScreen onLoginSuccess={setUser} />
+      {pantalla === 'home' && (
+        <HomeScreen
+          user={user}
+          onLogout={cerrarSesion}
+          onVerProductos={() => setPantalla('listado')}
+          // onVerCarrito llegará en la Etapa 4
+        />
+      )}
+
+      {pantalla === 'listado' && (
+        <>
+          <TopBar titulo="Productos" onVolver={() => setPantalla('home')} />
+          <ProductListScreen onSeleccionarProducto={abrirDetalle} />
+        </>
+      )}
+
+      {pantalla === 'detalle' && productoActivo && (
+        <>
+          <TopBar titulo={productoActivo.nombre} onVolver={() => setPantalla('listado')} />
+          <ProductDetailScreen producto={productoActivo} />
+        </>
       )}
     </SafeAreaView>
   );
@@ -46,30 +83,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  placeholder: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  emoji: {
-    fontSize: 56,
-    marginBottom: spacing.md,
-  },
-  title: {
-    ...typography.title,
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  text: {
-    ...typography.subtitle,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-  },
-  button: {
-    marginTop: spacing.xl,
-    maxWidth: 280,
   },
 });

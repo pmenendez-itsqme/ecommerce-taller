@@ -1,4 +1,5 @@
 export { default as LoginScreen } from './LoginScreen';
-// Etapa 2: export { default as HomeScreen } from './HomeScreen';
-// Etapa 3: ProductListScreen, ProductDetailScreen
+export { default as HomeScreen } from './HomeScreen';
+export { default as ProductListScreen } from './ProductListScreen';
+export { default as ProductDetailScreen } from './ProductDetailScreen';
 // Etapa 4: CartScreen
