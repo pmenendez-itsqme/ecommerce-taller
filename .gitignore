@@ -1,0 +1,37 @@
+# Dependencias
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Builds nativos
+/ios
+/android
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Metro
+.metro-health-check*
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS / editores
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/settings.json
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local

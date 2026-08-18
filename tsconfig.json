@@ -1,0 +1,29 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    // --- Estas 4 opciones las hereda de expo/tsconfig.base, pero las repetimos
+    // --- a propósito: si node_modules no está instalado, el "extends" falla en
+    // --- silencio y VS Code marca todo el JSX en rojo (error TS17004).
+    // --- Declarándolas aquí, el editor funciona siempre.
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "isolatedModules": true,
+    "noEmit": true,
+
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}
