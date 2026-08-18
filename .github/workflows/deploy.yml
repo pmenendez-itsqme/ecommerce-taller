@@ -1,0 +1,64 @@
+name: Desplegar en GitHub Pages
+
+# Se ejecuta en cada push a main, y también a mano desde la pestaña Actions
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Permisos que GitHub Pages necesita para publicar
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Si haces dos push seguidos, cancela el despliegue anterior
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  construir:
+    name: Compilar la versión web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Compilar para web
+        # Genera la carpeta dist/ con HTML + JS estáticos.
+        # La subruta /ecommerce-taller sale de experiments.baseUrl en app.json
+        run: npx expo export --platform web --output-dir dist
+
+      - name: Desactivar Jekyll
+        # GitHub Pages ignora las carpetas que empiezan por "_" (como _expo).
+        # Este archivo vacío lo desactiva y evita errores 404 en los scripts.
+        run: touch dist/.nojekyll
+
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+
+      - name: Subir el resultado
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  desplegar:
+    name: Publicar
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Desplegar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
