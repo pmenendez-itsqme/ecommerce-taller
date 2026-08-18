@@ -11,20 +11,22 @@ import {
 } from 'react-native';
 import { AppButton, AppTextInput } from '../components';
 import { PanelDiagnostico } from '../components/PanelDiagnostico';
+import { useAuth } from '../context/AuthContext';
 import { login } from '../services/authService';
 import { colors, radius, spacing, typography } from '../theme';
-import type { LoginFormErrors, User } from '../types';
+import type { LoginFormErrors } from '../types';
 import { isFormValid, validateLoginForm } from '../utils/validators';
 
-interface LoginScreenProps {
-  /**
-   * Se ejecuta cuando el login es correcto.
-   * En la Etapa 5 aquí conectaremos la navegación hacia Home.
-   */
-  onLoginSuccess?: (user: User) => void;
-}
+/**
+ * ETAPA 5 — Ya no recibe props.
+ *
+ * Al iniciar sesión llama a iniciarSesion() del AuthContext. El
+ * RootNavigator detecta el cambio y sustituye Login por la aplicación:
+ * no hace falta navegar a mano.
+ */
+export default function LoginScreen() {
+  const { iniciarSesion } = useAuth();
 
-export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   // --- Estado del formulario -------------------------------------------
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -74,7 +76,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       const result = await login({ email, password });
 
       if (result.success) {
-        onLoginSuccess?.(result.user);
+        iniciarSesion(result.user);
       } else {
         setServerError(result.message);
       }

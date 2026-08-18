@@ -2,33 +2,36 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppButton } from '../components';
 import { ProductImage } from '../components/ProductImage';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCart } from '../context/CartContext';
+import { obtenerProductoPorId } from '../data/productos';
+import type { ProductStackParamList } from '../navigation/types';
 import { colors, radius, spacing, typography } from '../theme';
-import type { Product } from '../types';
 import { calcularDescuento, estrellas, formatearPrecio } from '../utils/formato';
 
-interface ProductDetailScreenProps {
-  producto: Product;
-}
+type Props = NativeStackScreenProps<ProductStackParamList, 'Detalle'>;
 
 /**
- * ETAPAS 3 y 4 — Detalle del producto
+ * ETAPAS 3 a 5 — Detalle del producto
  *
- * El producto llega por props, pero el carrito se toma del estado global
- * con useCart(). Así esta pantalla puede añadir al carrito sin que App.tsx
- * tenga que pasarle ninguna función.
+ * Recibe el ID por la ruta y resuelve el producto contra el catálogo.
+ * Pasar el id en vez del objeto completo es lo que pide React Navigation:
+ * los parámetros deben ser serializables.
  */
-export default function ProductDetailScreen({ producto }: ProductDetailScreenProps) {
+export default function ProductDetailScreen({ route }: Props) {
+  const producto = obtenerProductoPorId(route.params.productoId);
   const { agregar, cantidadDeProducto } = useCart();
 
   /** Confirmación temporal tras pulsar "Agregar al carrito" */
   const [confirmacion, setConfirmacion] = useState(false);
 
-  const enCarrito = cantidadDeProducto(producto.id);
-  const descuento = calcularDescuento(producto.precio, producto.precioAnterior);
-  const agotado = producto.stock === 0;
-  const quedanPocas = producto.stock > 0 && producto.stock <= 5;
-  const topeAlcanzado = enCarrito >= producto.stock;
+  const enCarrito = producto ? cantidadDeProducto(producto.id) : 0;
+  const descuento = producto
+    ? calcularDescuento(producto.precio, producto.precioAnterior)
+    : null;
+  const agotado = !producto || producto.stock === 0;
+  const quedanPocas = !!producto && producto.stock > 0 && producto.stock <= 5;
+  const topeAlcanzado = !!producto && enCarrito >= producto.stock;
 
   /**
    * El aviso desaparece solo a los 2 segundos.
@@ -42,9 +45,24 @@ export default function ProductDetailScreen({ producto }: ProductDetailScreenPro
   }, [confirmacion]);
 
   const manejarAgregar = () => {
+    if (!producto) return;
     agregar(producto);
     setConfirmacion(true);
   };
+
+  // Si el id no existe en el catálogo mostramos un aviso claro
+  // en vez de dejar que la app reviente. Va DESPUÉS de los hooks:
+  // las reglas de React prohíben llamarlos condicionalmente.
+  if (!producto) {
+    return (
+      <View style={styles.noEncontrado}>
+        <Text style={styles.noEncontradoIcono}>🔍</Text>
+        <Text style={styles.noEncontradoTexto}>
+          No encontramos este producto en el catálogo.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.contenedor}>
@@ -378,6 +396,22 @@ const styles = StyleSheet.create({
     ...typography.caption,
     fontWeight: '600',
     color: colors.success,
+    textAlign: 'center',
+  },
+  noEncontrado: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl,
+    backgroundColor: colors.background,
+  },
+  noEncontradoIcono: {
+    fontSize: 48,
+    marginBottom: spacing.md,
+  },
+  noEncontradoTexto: {
+    ...typography.subtitle,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
 });

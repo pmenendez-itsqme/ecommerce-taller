@@ -1,34 +1,44 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppButton } from '../components';
 import { MenuCard } from '../components/MenuCard';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { colors, radius, spacing, typography } from '../theme';
-import type { User } from '../types';
+import type { MainTabParamList } from '../navigation/types';
 
-interface HomeScreenProps {
-  user: User;
-  onLogout: () => void;
-  /** Etapa 3: llevará al listado de productos */
-  onVerProductos?: () => void;
-  /** Etapa 4: llevará al carrito de compras */
-  onVerCarrito?: () => void;
-  /** Etapa 4: número de artículos en el carrito */
-  itemsEnCarrito?: number;
-}
+type Props = BottomTabScreenProps<MainTabParamList, 'Inicio'>;
 
 /**
- * ETAPA 2 — Pantalla de Inicio (Home)
+ * ETAPAS 2 y 5 — Pantalla de Inicio (Home)
  *
- * Es el panel de bienvenida al que se llega tras iniciar sesión.
- * Su trabajo es orientar: quién eres y a dónde puedes ir.
+ * Con React Navigation la pantalla recibe `navigation` automáticamente,
+ * y el usuario y el carrito salen de los contextos globales.
+ * Ya no necesita ni una sola prop del componente padre.
  */
-export default function HomeScreen({
-  user,
-  onLogout,
-  onVerProductos,
-  onVerCarrito,
-  itemsEnCarrito = 0,
-}: HomeScreenProps) {
+export default function HomeScreen({ navigation }: Props) {
+  /**
+   * Esta pantalla oculta el header, así que el contenido empezaría
+   * debajo de la muesca o la barra de estado. insets.top nos da esa
+   * altura exacta en CADA dispositivo, sin números mágicos.
+   */
+  const insets = useSafeAreaInsets();
+  const { user, cerrarSesion } = useAuth();
+  const { totales, vaciar } = useCart();
+
+  // El navegador solo monta esta pantalla con sesión iniciada,
+  // pero TypeScript no lo sabe: esta guarda lo tranquiliza.
+  if (!user) return null;
+
+  const itemsEnCarrito = totales.unidades;
+
+  const onLogout = () => {
+    // El carrito pertenece al usuario: al salir se vacía.
+    vaciar();
+    cerrarSesion();
+  };
   // Primera letra del nombre para el avatar. El '?' evita reventar
   // si algún día llegara un usuario sin nombre.
   const inicial = user.name?.trim().charAt(0).toUpperCase() ?? '?';
@@ -38,8 +48,12 @@ export default function HomeScreen({
 
   return (
     <ScrollView
-      contentContainerStyle={styles.scroll}
+      contentContainerStyle={[
+        styles.scroll,
+        { paddingTop: insets.top + spacing.lg },
+      ]}
       showsVerticalScrollIndicator={false}
+      style={styles.fondo}
     >
       <View style={styles.contenido}>
         {/* Cabecera con identidad del usuario */}
@@ -74,8 +88,7 @@ export default function HomeScreen({
           icono="🛍️"
           titulo="Ver productos"
           descripcion="Explora el catálogo completo"
-          onPress={() => onVerProductos?.()}
-          proximamente={!onVerProductos}
+          onPress={() => navigation.navigate('Productos')}
         />
 
         <MenuCard
@@ -89,8 +102,7 @@ export default function HomeScreen({
               : 'Aún no has añadido nada'
           }
           badge={itemsEnCarrito}
-          onPress={() => onVerCarrito?.()}
-          proximamente={!onVerCarrito}
+          onPress={() => navigation.navigate('Carrito')}
         />
 
         <AppButton
@@ -113,6 +125,10 @@ function obtenerSaludo(): string {
 }
 
 const styles = StyleSheet.create({
+  fondo: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   scroll: {
     flexGrow: 1,
     alignItems: 'center',

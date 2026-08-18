@@ -14,10 +14,10 @@ El proyecto se desarrolla en **5 etapas**, y cada etapa termina con un commit a 
 | Etapa | Contenido | Estado |
 |-------|-----------|--------|
 | 1 | Configuración inicial y pantalla de Login | ✅ Completada |
-| 2 | Pantalla de Inicio (Home) | ⬜ Pendiente |
-| 3 | Listado y detalle de productos | ⬜ Pendiente |
-| 4 | Lógica del carrito y estado global | ⬜ Pendiente |
-| 5 | Navegación completa y pulido de UX | ⬜ Pendiente |
+| 2 | Pantalla de Inicio (Home) | ✅ Completada |
+| 3 | Listado y detalle de productos | ✅ Completada |
+| 4 | Lógica del carrito y estado global | ✅ Completada |
+| 5 | Navegación completa y pulido de UX | ✅ Completada |
 
 ---
 
@@ -67,13 +67,15 @@ ecommerce-taller/
 ├── app.json                 # Configuración de Expo
 ├── tsconfig.json            # Configuración de TypeScript (modo strict)
 └── src/
-    ├── components/          # Componentes reutilizables (AppButton, AppTextInput)
-    ├── screens/             # Una carpeta = una pantalla completa
-    ├── navigation/          # React Navigation (Etapa 5)
+    ├── components/          # 10 componentes reutilizables
+    ├── screens/             # Login, Home, Listado, Detalle, Carrito
+    ├── navigation/          # RootNavigator, MainTabs, ProductStack, types
+    ├── context/             # AuthContext y CartContext (estado global)
+    ├── data/                # Catálogo simulado de productos
     ├── services/            # Acceso a datos / API (authService)
     ├── theme/               # Colores, espaciado y tipografía
     ├── types/               # Interfaces y tipos de TypeScript
-    └── utils/               # Funciones puras (validators)
+    └── utils/               # validators, carrito, formato, inspeccionar
 ```
 
 **Por qué esta estructura:** cada carpeta tiene una única responsabilidad.
@@ -186,3 +188,41 @@ Se corrige con `npx expo install --fix`.
 ## Autor
 
 Taller de Desarrollo de Aplicaciones Móviles.
+
+
+---
+
+## Arquitectura de navegación (Etapa 5)
+
+```
+SafeAreaProvider
+└── AuthProvider          ← quién es el usuario
+    └── CartProvider      ← qué lleva en el carrito
+        └── RootNavigator (Stack)
+            ├── sin sesión → Login
+            └── con sesión → MainTabs (pestañas inferiores)
+                             ├── Inicio    → HomeScreen
+                             ├── Productos → ProductStack (Stack anidado)
+                             │               ├── Listado
+                             │               └── Detalle  { productoId }
+                             └── Carrito   → CartScreen  (con badge)
+```
+
+**Flujos protegidos:** el RootNavigator no navega a mano tras el login.
+Declara condicionalmente qué pantallas *existen*, así es imposible entrar
+sin sesión ni siquiera con el botón "atrás".
+
+**Parámetros serializables:** al Detalle se le pasa `{ productoId }`, no el
+objeto del producto. Es lo que exige React Navigation para poder guardar
+y restaurar el estado de navegación.
+
+## Estado global
+
+| Contexto | Qué guarda | Hook |
+|----------|-----------|------|
+| `AuthContext` | Usuario con sesión iniciada | `useAuth()` |
+| `CartContext` | Líneas del carrito y totales | `useCart()` |
+
+La lógica del carrito vive en `src/utils/carrito.ts` como funciones puras
+(`calcularTotales`, `cartReducer`), separada de la interfaz para poder
+probarla sin abrir la aplicación.

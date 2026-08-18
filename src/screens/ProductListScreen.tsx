@@ -5,22 +5,19 @@ import { ProductCard } from '../components/ProductCard';
 import { SearchBar } from '../components/SearchBar';
 import { PRODUCTOS } from '../data/productos';
 import { colors, spacing, typography } from '../theme';
-import type { Product } from '../types';
 import { normalizarTexto } from '../utils/formato';
+import type { ProductStackParamList } from '../navigation/types';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-interface ProductListScreenProps {
-  onSeleccionarProducto: (producto: Product) => void;
-}
+type Props = NativeStackScreenProps<ProductStackParamList, 'Listado'>;
 
 /**
- * ETAPA 3 — Listado de productos
+ * ETAPAS 3 y 5 — Listado de productos
  *
- * Muestra el catálogo en una cuadrícula de 2 columnas, con buscador
- * y filtro por categoría.
+ * Cuadrícula de 2 columnas con buscador y filtro por categoría.
+ * Al tocar una tarjeta navega al Detalle pasando SOLO el id.
  */
-export default function ProductListScreen({
-  onSeleccionarProducto,
-}: ProductListScreenProps) {
+export default function ProductListScreen({ navigation }: Props) {
   const [busqueda, setBusqueda] = useState('');
   const [categoria, setCategoria] = useState<FiltroCategoria>(null);
 
@@ -64,8 +61,6 @@ export default function ProductListScreen({
         // junto con los productos en vez de quedarse fija ocupando espacio.
         ListHeaderComponent={
           <View style={styles.cabecera}>
-            <Text style={styles.titulo}>Catálogo</Text>
-
             <SearchBar
               valor={busqueda}
               onCambiar={setBusqueda}
@@ -93,7 +88,14 @@ export default function ProductListScreen({
           </View>
         }
         renderItem={({ item }) => (
-          <ProductCard producto={item} onPress={onSeleccionarProducto} />
+          <ProductCard
+            producto={item}
+            // Pasamos el id, no el objeto: React Navigation pide
+            // que los parámetros sean serializables.
+            onPress={(producto) =>
+              navigation.navigate('Detalle', { productoId: producto.id })
+            }
+          />
         )}
       />
     </View>

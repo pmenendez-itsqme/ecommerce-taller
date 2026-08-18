@@ -2,23 +2,25 @@ import React, { useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppButton } from '../components';
 import { CartItemRow } from '../components/CartItemRow';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { useCart } from '../context/CartContext';
+import type { MainTabParamList } from '../navigation/types';
 import { colors, radius, spacing, typography } from '../theme';
 import { IVA } from '../utils/carrito';
 import { formatearPrecio } from '../utils/formato';
 
-interface CartScreenProps {
-  /** Vuelve al catálogo cuando el carrito está vacío */
-  onSeguirComprando: () => void;
-}
+type Props = BottomTabScreenProps<MainTabParamList, 'Carrito'>;
 
 /**
- * ETAPA 4 — Pantalla del carrito de compras.
+ * ETAPAS 4 y 5 — Pantalla del carrito de compras.
  *
- * Fíjate en que NO recibe los productos por props: los pide directamente
- * al estado global con useCart(). Esa es la ventaja del Context.
+ * No recibe los productos por props: los pide al estado global con
+ * useCart(). Esa es la ventaja del Context.
  */
-export default function CartScreen({ onSeguirComprando }: CartScreenProps) {
+export default function CartScreen({ navigation }: Props) {
+  /** Lleva al usuario al catálogo (otra pestaña) */
+  const onSeguirComprando = () => navigation.navigate('Productos');
+
   const { items, totales, cambiarCantidad, quitar, vaciar } = useCart();
   const [confirmandoVaciar, setConfirmandoVaciar] = useState(false);
   const [compraRealizada, setCompraRealizada] = useState(false);
@@ -72,7 +74,6 @@ export default function CartScreen({ onSeguirComprando }: CartScreenProps) {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View style={styles.cabecera}>
-            <Text style={styles.titulo}>Mi carrito</Text>
             <Text style={styles.contador}>
               {totales.unidades} {totales.unidades === 1 ? 'unidad' : 'unidades'} ·{' '}
               {items.length} {items.length === 1 ? 'producto' : 'productos'}
