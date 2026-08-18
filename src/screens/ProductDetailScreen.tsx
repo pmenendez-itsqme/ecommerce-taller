@@ -1,30 +1,50 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppButton } from '../components';
 import { ProductImage } from '../components/ProductImage';
+import { useCart } from '../context/CartContext';
 import { colors, radius, spacing, typography } from '../theme';
 import type { Product } from '../types';
 import { calcularDescuento, estrellas, formatearPrecio } from '../utils/formato';
 
 interface ProductDetailScreenProps {
   producto: Product;
-  /** Etapa 4: añadirá el producto al carrito */
-  onAgregarAlCarrito?: (producto: Product) => void;
 }
 
 /**
- * ETAPA 3 — Detalle del producto
+ * ETAPAS 3 y 4 — Detalle del producto
  *
- * Recibe el producto ya resuelto por props. No lo busca ella misma:
- * así el componente es "tonto" y se puede probar pasándole cualquier objeto.
+ * El producto llega por props, pero el carrito se toma del estado global
+ * con useCart(). Así esta pantalla puede añadir al carrito sin que App.tsx
+ * tenga que pasarle ninguna función.
  */
-export default function ProductDetailScreen({
-  producto,
-  onAgregarAlCarrito,
-}: ProductDetailScreenProps) {
+export default function ProductDetailScreen({ producto }: ProductDetailScreenProps) {
+  const { agregar, cantidadDeProducto } = useCart();
+
+  /** Confirmación temporal tras pulsar "Agregar al carrito" */
+  const [confirmacion, setConfirmacion] = useState(false);
+
+  const enCarrito = cantidadDeProducto(producto.id);
   const descuento = calcularDescuento(producto.precio, producto.precioAnterior);
   const agotado = producto.stock === 0;
   const quedanPocas = producto.stock > 0 && producto.stock <= 5;
+  const topeAlcanzado = enCarrito >= producto.stock;
+
+  /**
+   * El aviso desaparece solo a los 2 segundos.
+   * La función de limpieza (return) cancela el temporizador si el usuario
+   * sale de la pantalla antes: sin ella, React avisaría de una fuga de memoria.
+   */
+  useEffect(() => {
+    if (!confirmacion) return;
+    const temporizador = setTimeout(() => setConfirmacion(false), 2000);
+    return () => clearTimeout(temporizador);
+  }, [confirmacion]);
+
+  const manejarAgregar = () => {
+    agregar(producto);
+    setConfirmacion(true);
+  };
 
   return (
     <View style={styles.contenedor}>
@@ -119,16 +139,33 @@ export default function ProductDetailScreen({
       {/* Barra fija inferior: la acción principal siempre visible,
           sin obligar al usuario a bajar hasta el final. */}
       <View style={styles.barraInferior}>
+        {/* Confirmación temporal tras añadir */}
+        {confirmacion && (
+          <View style={styles.confirmacion} accessibilityLiveRegion="polite">
+            <Text style={styles.confirmacionTexto}>
+              ✓ Añadido al carrito ({enCarrito} en total)
+            </Text>
+          </View>
+        )}
+
         <View style={styles.barraContenido}>
           <View>
-            <Text style={styles.barraEtiqueta}>Precio total</Text>
+            <Text style={styles.barraEtiqueta}>
+              {enCarrito > 0 ? `${enCarrito} en el carrito` : 'Precio'}
+            </Text>
             <Text style={styles.barraPrecio}>{formatearPrecio(producto.precio)}</Text>
           </View>
 
           <AppButton
-            title={agotado ? 'No disponible' : 'Agregar al carrito'}
-            onPress={() => onAgregarAlCarrito?.(producto)}
-            disabled={agotado || !onAgregarAlCarrito}
+            title={
+              agotado
+                ? 'No disponible'
+                : topeAlcanzado
+                  ? 'Sin más stock'
+                  : 'Agregar al carrito'
+            }
+            onPress={manejarAgregar}
+            disabled={agotado || topeAlcanzado}
             style={styles.botonAgregar}
           />
         </View>
@@ -327,5 +364,20 @@ const styles = StyleSheet.create({
   botonAgregar: {
     flex: 1,
     maxWidth: 220,
+  },
+  confirmacion: {
+    width: '100%',
+    maxWidth: 480,
+    backgroundColor: '#F0FDF4',
+    borderRadius: radius.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  confirmacionTexto: {
+    ...typography.caption,
+    fontWeight: '600',
+    color: colors.success,
+    textAlign: 'center',
   },
 });

@@ -55,3 +55,31 @@ export interface Product {
   /** Unidades disponibles. 0 = agotado */
   stock: number;
 }
+
+// ─────────────────────────────────────────────────────────────────────
+//  ETAPA 4 — Carrito de compras
+// ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Una línea del carrito.
+ *
+ * Guardamos el producto COMPLETO, no solo su id. Así el carrito puede
+ * pintarse sin volver a buscar en el catálogo, y si mañana el precio
+ * cambia en la tienda, la compra en curso conserva el precio pactado.
+ */
+export interface CartItem {
+  producto: Product;
+  cantidad: number;
+}
+
+/** Desglose económico del carrito */
+export interface CartTotals {
+  /** Suma de precio × cantidad de todas las líneas */
+  subtotal: number;
+  /** Impuesto calculado sobre el subtotal */
+  iva: number;
+  /** Subtotal + IVA */
+  total: number;
+  /** Número total de unidades (no de líneas) */
+  unidades: number;
+}

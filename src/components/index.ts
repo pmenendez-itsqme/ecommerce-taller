@@ -7,3 +7,5 @@ export { SearchBar } from './SearchBar';
 export { CategoryChips } from './CategoryChips';
 export type { FiltroCategoria } from './CategoryChips';
 export { TopBar } from './TopBar';
+export { QuantityStepper } from './QuantityStepper';
+export { CartItemRow } from './CartItemRow';

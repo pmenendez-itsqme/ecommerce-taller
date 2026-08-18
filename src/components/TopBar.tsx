@@ -5,6 +5,10 @@ import { colors, spacing, typography } from '../theme';
 interface TopBarProps {
   titulo: string;
   onVolver: () => void;
+  /** Si se pasa, muestra el icono del carrito a la derecha */
+  onAbrirCarrito?: () => void;
+  /** Unidades en el carrito, para el contador rojo */
+  unidadesCarrito?: number;
 }
 
 /**
@@ -14,7 +18,12 @@ interface TopBarProps {
  * sustituiremos por el header de React Navigation. Tenerla como componente
  * hace que ese cambio afecte a un solo archivo.
  */
-export function TopBar({ titulo, onVolver }: TopBarProps) {
+export function TopBar({
+  titulo,
+  onVolver,
+  onAbrirCarrito,
+  unidadesCarrito = 0,
+}: TopBarProps) {
   return (
     <View style={styles.barra}>
       <Pressable
@@ -30,6 +39,23 @@ export function TopBar({ titulo, onVolver }: TopBarProps) {
       <Text style={styles.titulo} numberOfLines={1}>
         {titulo}
       </Text>
+
+      {onAbrirCarrito && (
+        <Pressable
+          onPress={onAbrirCarrito}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Abrir carrito, ${unidadesCarrito} unidades`}
+          style={({ pressed }) => [styles.carrito, pressed && styles.pulsado]}
+        >
+          <Text style={styles.carritoIcono}>🛒</Text>
+          {unidadesCarrito > 0 && (
+            <View style={styles.contador}>
+              <Text style={styles.contadorTexto}>{unidadesCarrito}</Text>
+            </View>
+          )}
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -62,5 +88,31 @@ const styles = StyleSheet.create({
     ...typography.label,
     fontSize: 15,
     color: colors.textPrimary,
+  },
+  carrito: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  carritoIcono: {
+    fontSize: 22,
+  },
+  contador: {
+    position: 'absolute',
+    top: 2,
+    right: 0,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  contadorTexto: {
+    color: colors.textOnPrimary,
+    fontSize: 10,
+    fontWeight: '700',
   },
 });
